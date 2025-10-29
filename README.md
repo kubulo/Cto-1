@@ -41,6 +41,20 @@ pnpm exec tsx src/api/demo-user.ts
 
 The script uses the shared Prisma client helper and prints the seeded dashboard data to the console.
 
+## Background Worker
+
+The BullMQ worker connects to Redis and processes reminder and report queues.
+
+```bash
+pnpm worker
+```
+
+Set `REDIS_URL` in your environment or `.env` file. A `docker-compose.yml` file is provided to run PostgreSQL, Redis, and the worker service locally:
+
+```bash
+docker compose up worker
+```
+
 ## Schema Overview
 
 A high-level description of every model, enum, and relation is documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md). Use it as a reference when evolving the domain.

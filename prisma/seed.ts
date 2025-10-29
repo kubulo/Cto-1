@@ -1,17 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import {
-  EmotionValence,
-  MessageRole,
-  Prisma,
-  PrismaClient,
-  ReminderStatus,
-  ReportType,
-} from '@prisma/client';
+   EmotionValence,
+   MessageRole,
+   Prisma,
+   PrismaClient,
+   ReminderStatus,
+   ReportType,
+ } from '@prisma/client';
+import { scheduleUserOnboardingJobs } from '../src/lib/queues/scheduler.js';
 
 const prisma = new PrismaClient();
-const VECTOR_DIMENSION = 1536;
+
 
 const demoEmail = 'demo.user@example.com';
+let onboardingUserId: string | null = null;
 
 function buildVector(dimension: number): number[] {
   return Array.from({ length: dimension }, (_, index) => {
@@ -63,6 +65,7 @@ async function main() {
         lastSeenAt: new Date(),
       },
     });
+    onboardingUserId = user.id;
 
     await tx.session.create({
       data: {
@@ -189,6 +192,15 @@ async function main() {
     await insertEmbedding(tx, { insightId: insight.id });
     await insertEmbedding(tx, { reportId: report.id });
   });
+
+  if (onboardingUserId) {
+    try {
+      await scheduleUserOnboardingJobs(onboardingUserId, { prisma });
+      console.log('Queued onboarding BullMQ jobs for demo user.');
+    } catch (error) {
+      console.warn('Skipping queue scheduling during seed', error);
+    }
+  }
 }
 
 main()
