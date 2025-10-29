@@ -40,6 +40,9 @@ Longer-term objectives defined by the user. Goals track progress, target dates, 
 ### Commitment
 Concrete tasks or reminders aligned to a goal. They inherit `ReminderStatus` to capture scheduling and completion, and include optional due and completion timestamps.
 
+### ReminderSchedule
+Persistence layer for BullMQ job metadata. Stores queue identifiers, cadence information, and execution timestamps to monitor reminder and report jobs per user.
+
 ### Emotion
 Captures mood snapshots associated with a user (and optionally a conversation) using qualitative valence and quantitative intensity.
 

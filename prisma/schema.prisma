@@ -53,6 +53,7 @@ model User {
   energyMetrics      EnergyMetric[]
   consistencyMetrics ConsistencyMetric[]
   reports            Report[]
+  reminderSchedules  ReminderSchedule[]
 
   @@index([createdAt])
 }
@@ -151,6 +152,26 @@ model Commitment {
 
   @@index([userId])
   @@index([goalId])
+}
+
+model ReminderSchedule {
+  id           String   @id @default(uuid())
+  userId       String?
+  queue        String
+  jobName      String
+  jobId        String   @unique
+  cadenceDays  Int?
+  nextRunAt    DateTime?
+  lastRunAt    DateTime?
+  lastStatus   String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([queue, jobName])
 }
 
 model Emotion {
