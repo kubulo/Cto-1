@@ -77,6 +77,19 @@ async function main() {
         userId: user.id,
         title: 'Onboarding with the AI coach',
         summary: 'Initial discussion about goals and wellbeing.',
+        promptConfig: {
+          role: '首席成长教练',
+          coachType: '战略型成长教练',
+          tone: '温暖且富有洞察力',
+          layerMix: {
+            phenomenon: 35,
+            reason: 25,
+            essence: 20,
+            principle: 15,
+            trend: 5,
+          },
+          goals: ['帮助用户建立可持续的正念习惯', '强调行动与反思的平衡'],
+        },
       },
     });
 
