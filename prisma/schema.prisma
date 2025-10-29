@@ -1,0 +1,224 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(schema: "public"), pgcrypto]
+}
+
+enum ReportType {
+  TWO_DAY
+  SEVEN_DAY
+  TWENTY_ONE_DAY
+}
+
+enum EmotionValence {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+enum ReminderStatus {
+  PENDING
+  SCHEDULED
+  COMPLETED
+  SKIPPED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  name               String?
+  avatarUrl          String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  lastSeenAt         DateTime?
+
+  sessions           Session[]
+  conversations      Conversation[]
+  messages           Message[]            @relation("UserMessages")
+  insights           Insight[]
+  goals              Goal[]
+  commitments        Commitment[]
+  emotions           Emotion[]
+  energyMetrics      EnergyMetric[]
+  consistencyMetrics ConsistencyMetric[]
+  reports            Report[]
+
+  @@index([createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Conversation {
+  id          String      @id @default(uuid())
+  userId      String
+  title       String
+  summary     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id])
+  messages    Message[]
+  insights    Insight[]
+  emotions    Emotion[]
+
+  @@index([userId, createdAt])
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  userId         String?
+  role           MessageRole
+  content        String
+  createdAt      DateTime      @default(now())
+  metadata       Json?
+
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  author         User?         @relation("UserMessages", fields: [userId], references: [id])
+  embedding      Embedding?
+
+  @@index([conversationId, createdAt])
+}
+
+model Insight {
+  id              String        @id @default(uuid())
+  userId          String
+  conversationId  String?
+  title           String
+  summary         String
+  details         String?
+  createdAt       DateTime      @default(now())
+  tags            String[]
+
+  user            User          @relation(fields: [userId], references: [id])
+  conversation    Conversation? @relation(fields: [conversationId], references: [id])
+  embedding       Embedding?
+
+  @@index([userId, createdAt])
+}
+
+model Goal {
+  id          String          @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  targetDate  DateTime?
+  status      ReminderStatus  @default(PENDING)
+  progress    Int?            @db.SmallInt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id])
+  commitments Commitment[]
+
+  @@index([userId])
+}
+
+model Commitment {
+  id          String         @id @default(uuid())
+  userId      String
+  goalId      String?
+  description String
+  status      ReminderStatus @default(PENDING)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  user        User           @relation(fields: [userId], references: [id])
+  goal        Goal?          @relation(fields: [goalId], references: [id])
+
+  @@index([userId])
+  @@index([goalId])
+}
+
+model Emotion {
+  id             String         @id @default(uuid())
+  userId         String
+  conversationId String?
+  valence        EmotionValence
+  intensity      Int
+  note           String?
+  recordedAt     DateTime       @default(now())
+
+  user           User           @relation(fields: [userId], references: [id])
+  conversation   Conversation?  @relation(fields: [conversationId], references: [id])
+
+  @@index([userId, recordedAt])
+}
+
+model EnergyMetric {
+  id         String   @id @default(uuid())
+  userId     String
+  value      Int
+  note       String?
+  recordedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, recordedAt])
+}
+
+model ConsistencyMetric {
+  id         String   @id @default(uuid())
+  userId     String
+  score      Decimal  @db.Decimal(5, 2)
+  windowDays Int
+  note       String?
+  recordedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, windowDays])
+}
+
+model Report {
+  id          String     @id @default(uuid())
+  userId      String
+  type        ReportType
+  periodStart DateTime
+  periodEnd   DateTime
+  summary     String
+  data        Json?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id])
+  embedding   Embedding?
+
+  @@index([userId, type, periodEnd])
+}
+
+model Embedding {
+  id        String                 @id @default(uuid())
+  messageId String?                @unique
+  insightId String?                @unique
+  reportId  String?                @unique
+  vector    Unsupported("vector") @db.Vector(1536)
+  dimension Int
+  createdAt DateTime               @default(now())
+
+  message Message? @relation(fields: [messageId], references: [id])
+  insight Insight? @relation(fields: [insightId], references: [id])
+  report  Report?  @relation(fields: [reportId], references: [id])
+}
