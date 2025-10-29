@@ -6,7 +6,8 @@
   "scripts": {
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "test": "tsx --test \"src/lib/llm/__tests__/**/*.test.ts\""
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
