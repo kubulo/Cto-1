@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+pnpm-store
+Dockerfile
+.dockerignore
+.gitignore
+coverage
